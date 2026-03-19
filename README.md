@@ -17,6 +17,10 @@ The main output file is:
 
 `dist\TikTokVoiceTTS.exe`
 
+The recommended Pal Engine integration artifact is:
+
+`dist\TikTokVoiceTTS-<version>.zip`
+
 The build also generates or copies these helper files into `dist`:
 
 - `voices.json`
@@ -25,10 +29,19 @@ The build also generates or copies these helper files into `dist`:
 - `example-input.txt`
 - `pronunciation_overrides.json`
 - `manifest.json`
+- `TikTokVoiceTTS-<version>.zip`
 
 The executable still requires an internet connection because audio is generated through remote TikTok TTS endpoints.
 
-The generated `manifest.json` matches the Pal Engine Integrations format, so the built `dist` folder can be registered directly as a TTS addon.
+The build now emits a ready-to-import Pal Engine plugin zip that matches the documented integration package layout. The zip should be the default artifact used for Pal Engine registration.
+
+Import flow in Pal Engine:
+
+1. Open `Settings -> Integrations`
+2. Choose `Add Plugin`
+3. Select `dist\TikTokVoiceTTS-<version>.zip`
+4. Let Pal Engine inspect it
+5. Save the integration
 
 ## Executable Usage
 

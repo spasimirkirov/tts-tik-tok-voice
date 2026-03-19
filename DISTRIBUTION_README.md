@@ -1,9 +1,22 @@
 # TikTok Voice TTS Executable
 
-This folder is ready to use. You do not need to install Python.
+This distribution is ready to use. You do not need to install Python.
+
+## Recommended Pal Engine Import
+
+Pal Engine should import the generated zip package, not the unpacked folder.
+
+Primary artifact:
+
+- `TikTokVoiceTTS-<version>.zip`
+  Ready-to-import integration package that matches the Pal Engine integration zip layout.
+
+Pal Engine can still inspect the unpacked folder, but the zip is the intended distribution format.
 
 ## Included Files
 
+- `TikTokVoiceTTS-<version>.zip`
+  Ready-to-import Pal Engine integration package.
 - `TikTokVoiceTTS.exe`
   The executable used to generate MP3 audio.
 - `voices.json`
@@ -15,7 +28,17 @@ This folder is ready to use. You do not need to install Python.
 - `pronunciation_overrides.json`
   Editable pronunciation replacements loaded by the executable.
 - `manifest.json`
-  Pal Engine integration manifest for registering this folder as a TTS addon.
+  Pal Engine integration manifest included in both the folder and the zip package.
+
+## Import Into Pal Engine
+
+1. Open `Settings -> Integrations`
+2. Choose `Add Plugin`
+3. Select the generated `TikTokVoiceTTS-<version>.zip`
+4. Let Pal Engine inspect it
+5. Save the integration
+
+Pal Engine will extract the zip into its managed external resources folder and register it from there.
 
 ## Requirements
 
