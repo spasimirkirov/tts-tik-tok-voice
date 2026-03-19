@@ -1,0 +1,12 @@
+{
+  "default": {},
+  "jp": {
+    "\\barigatou gozaimasu\\b": "ありがとうございます",
+    "\\barigatou\\b": "ありがとう",
+    "\\bsensei\\b": "せんせい",
+    "\\bsenpai\\b": "せんぱい",
+    "\\bohayou\\b": "おはよう",
+    "\\bkonnichiwa\\b": "こんにちは",
+    "\\bkonbanwa\\b": "こんばんは"
+  }
+}

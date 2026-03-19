@@ -1,30 +1,62 @@
 # TikTok Voice TTS
 
-This is a simple Python program that gives you an `.mp3` file including the given text input which is spoken by one of the TikTok voices.
+This repository is a fork of [mark-rez/TikTok-Voice-TTS](https://github.com/mark-rez/TikTok-Voice-TTS) adapted to make Windows builds and command-line usage simpler.
 
-I thank all people that use this for their project. I love to contribute to the community. However, please credit me by using the GitHub project link.
+The main goal of this fork is to let a user build a small standalone `.exe` that can be used easily from Command Prompt, PowerShell, batch files, or other scripts without requiring a separate Python install on the target machine.
 
-## Usage
-To use this program, you need an internet connection, python 3.6+ and all of the required packages installed.
-To install the required packages, run: `pip3 install -r requirements.txt`
+This project is only for fun. It is not associated with TikTok in any way.
+
+## Windows Executable
+
+### Build
+Run:
+
+`powershell -ExecutionPolicy Bypass -File .\build_exe.ps1`
+
+The main output file is:
+
+`dist\TikTokVoiceTTS.exe`
+
+The build also generates or copies these helper files into `dist`:
+
+- `voices.json`
+- `README.md`
+- `LICENSE.txt`
+- `example-input.txt`
+- `pronunciation_overrides.json`
+- `manifest.json`
+
+The executable still requires an internet connection because audio is generated through remote TikTok TTS endpoints.
+
+The generated `manifest.json` matches the Pal Engine Integrations format, so the built `dist` folder can be registered directly as a TTS addon.
+
+## Executable Usage
+
+### List voices
+Run `TikTokVoiceTTS.exe --list-voices`
+
+### Export voices as JSON
+Run `TikTokVoiceTTS.exe --export-voices-json .\voices.json`
 
 ### Create audio from file
-1. Make sure you have your text in the file plaintext.
-2. Run `py main.py -txt FILENAME.txt -v VOICENAME` (see voices below)
-
-Only latin characters are supported.
+1. Put your text in a UTF-8 text file.
+2. Run `TikTokVoiceTTS.exe --text-file FILENAME.txt --voice VOICENAME`
 
 ### Create audio from argument
-1. Run `py main.py -t TEXT -v VOICENAME` (see voices below)
+1. Run `TikTokVoiceTTS.exe --text TEXT --voice VOICENAME`
 
-You can have non-latin characters (as long as it has a TTS supported voice).
+### Set output file
+Run `TikTokVoiceTTS.exe --text "Hello world" --voice US_MALE_1 --output my-audio.mp3`
 
-### Create audio in python script
-1. Put the file folder/package `tiktok_voice` into your directory.
-2. Import the text-to-speech function and the voices with `from tiktok_voice import tts, Voice`.
-3. Execute `tts(TEXT, VOICE, OUTPUTFILENAME, PLAYSOUND)` in your code. 
+### Play after generating
+Run `TikTokVoiceTTS.exe --text "Hello world" --voice US_MALE_1 --play`
 
-I provided an [example script](https://github.com/GiorDior/TikTok-Voice-TTS/blob/main/example_script.py) which shows how the tts function could be used in a script.
+### Pronunciation overrides
+If a voice clips or mispronounces a word, you can edit `pronunciation_overrides.json`.
+
+The executable loads the bundled defaults first, then merges any `pronunciation_overrides.json` found next to the `.exe` or in the current working directory.
+
+This fork ships default Japanese overrides so romanized inputs such as `Arigatou Sensei` can be rewritten to kana before they are sent to TTS.
 
 ## Voices
 List of every voice and its designation:
@@ -126,13 +158,6 @@ List of every voice and its designation:
 | MALE_NARRATION                |
 | MALE_FUNNY                    |
 | FEMALE_EMOTIONAL              |
-
-## Samples
-
-You can find samples of all voices in [/samples/](https://github.com/GiorDior/TikTok-Voice-TTS/tree/main/samples)
-
-## Credits
-- [oscie](https://github.com/oscie57/tiktok-voice) for giving me the idea for this project
 
 ## License
 ```

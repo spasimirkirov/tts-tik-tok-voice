@@ -119,3 +119,147 @@ class Voice(Enum):
             if voice.name == input_string:
                 return voice
         return None
+
+
+VOICE_CATEGORIES = {
+    'DISNEY': [
+        Voice.GHOSTFACE,
+        Voice.CHEWBACCA,
+        Voice.C3PO,
+        Voice.STITCH,
+        Voice.STORMTROOPER,
+        Voice.ROCKET,
+        Voice.MADAME_LEOTA,
+        Voice.GHOST_HOST,
+        Voice.PIRATE,
+    ],
+    'ENGLISH': [
+        Voice.AU_FEMALE_1,
+        Voice.AU_MALE_1,
+        Voice.UK_MALE_1,
+        Voice.UK_MALE_2,
+        Voice.US_FEMALE_1,
+        Voice.US_FEMALE_2,
+        Voice.US_MALE_1,
+        Voice.US_MALE_2,
+        Voice.US_MALE_3,
+        Voice.US_MALE_4,
+        Voice.MALE_JOMBOY,
+        Voice.MALE_CODY,
+        Voice.FEMALE_SAMC,
+        Voice.FEMALE_MAKEUP,
+        Voice.FEMALE_RICHGIRL,
+        Voice.MALE_GRINCH,
+        Voice.MALE_DEADPOOL,
+        Voice.MALE_JARVIS,
+        Voice.MALE_ASHMAGIC,
+        Voice.MALE_OLANTERKKERS,
+        Voice.MALE_UKNEIGHBOR,
+        Voice.MALE_UKBUTLER,
+        Voice.FEMALE_SHENNA,
+        Voice.FEMALE_PANSINO,
+        Voice.MALE_TREVOR,
+        Voice.FEMALE_BETTY,
+        Voice.MALE_CUPID,
+        Voice.FEMALE_GRANDMA,
+        Voice.MALE_XMXS_CHRISTMAS,
+        Voice.MALE_SANTA_NARRATION,
+        Voice.MALE_SING_DEEP_JINGLE,
+        Voice.MALE_SANTA_EFFECT,
+        Voice.FEMALE_HT_NEYEAR,
+        Voice.MALE_WIZARD,
+        Voice.FEMALE_HT_HALLOWEEN,
+    ],
+    'EUROPE': [
+        Voice.FR_MALE_1,
+        Voice.FR_MALE_2,
+        Voice.DE_FEMALE,
+        Voice.DE_MALE,
+        Voice.ES_MALE,
+    ],
+    'AMERICA': [
+        Voice.ES_MX_MALE,
+        Voice.BR_FEMALE_1,
+        Voice.BR_FEMALE_2,
+        Voice.BR_FEMALE_3,
+        Voice.BR_MALE,
+        Voice.BP_FEMALE_IVETE,
+        Voice.BP_FEMALE_LUDMILLA,
+        Voice.PT_FEMALE_LHAYS,
+        Voice.PT_FEMALE_LAIZZA,
+        Voice.PT_MALE_BUENO,
+    ],
+    'ASIA': [
+        Voice.ID_FEMALE,
+        Voice.JP_FEMALE_1,
+        Voice.JP_FEMALE_2,
+        Voice.JP_FEMALE_3,
+        Voice.JP_MALE,
+        Voice.KR_MALE_1,
+        Voice.KR_FEMALE,
+        Voice.KR_MALE_2,
+        Voice.JP_FEMALE_FUJICOCHAN,
+        Voice.JP_FEMALE_HASEGAWARIONA,
+        Voice.JP_MALE_KEIICHINAKANO,
+        Voice.JP_FEMALE_OOMAEAIIKA,
+        Voice.JP_MALE_YUJINCHIGUSA,
+        Voice.JP_FEMALE_SHIROU,
+        Voice.JP_MALE_TAMAWAKAZUKI,
+        Voice.JP_FEMALE_KAORISHOJI,
+        Voice.JP_FEMALE_YAGISHAKI,
+        Voice.JP_MALE_HIKAKIN,
+        Voice.JP_FEMALE_REI,
+        Voice.JP_MALE_SHUICHIRO,
+        Voice.JP_MALE_MATSUDAKE,
+        Voice.JP_FEMALE_MACHIKORIIITA,
+        Voice.JP_MALE_MATSUO,
+        Voice.JP_MALE_OSADA,
+    ],
+    'SINGING': [
+        Voice.SING_FEMALE_ALTO,
+        Voice.SING_MALE_TENOR,
+        Voice.SING_FEMALE_WARMY_BREEZE,
+        Voice.SING_MALE_SUNSHINE_SOON,
+        Voice.SING_FEMALE_GLORIOUS,
+        Voice.SING_MALE_IT_GOES_UP,
+        Voice.SING_MALE_CHIPMUNK,
+        Voice.SING_FEMALE_WONDERFUL_WORLD,
+        Voice.SING_MALE_FUNNY_THANKSGIVING,
+    ],
+    'OTHER': [
+        Voice.MALE_NARRATION,
+        Voice.MALE_FUNNY,
+        Voice.FEMALE_EMOTIONAL,
+    ],
+}
+
+
+def voices_payload() -> dict:
+    categorized_voices = []
+    for category, voices in VOICE_CATEGORIES.items():
+        categorized_voices.append({
+            'category': category,
+            'voices': [
+                {
+                    'name': voice.name,
+                    'id': voice.value,
+                }
+                for voice in voices
+            ],
+        })
+
+    return {
+        'totalVoices': len(list(Voice)),
+        'categories': categorized_voices,
+        'flat': [
+            {
+                'name': voice.name,
+                'id': voice.value,
+                'category': next(
+                    (category for category, voices in VOICE_CATEGORIES.items() if voice in voices),
+                    'UNCATEGORIZED',
+                ),
+            }
+            for voice in Voice
+        ],
+    }

@@ -1,0 +1,5 @@
+Hello from TikTok Voice TTS.
+
+Replace this file with your own text and run the executable with:
+
+TikTokVoiceTTS.exe --text-file .\example-input.txt --voice US_MALE_1

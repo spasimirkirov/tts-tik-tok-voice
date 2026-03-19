@@ -1,40 +1,88 @@
-# author: Giorgio
-# date: 23.08.2024
-# topic: TikTok-Voice-TTS
-# version: 1.3
-
-from codecs import BOM_UTF32
 import argparse
-# the script in the directory
+import json
+from pathlib import Path
+
 from tiktok_voice import tts, Voice
+from tiktok_voice.src.voice import voices_payload
 
-def main():
-    # adding arguments
-    parser = argparse.ArgumentParser(description='TikTok TTS')
-    parser.add_argument('-t', help='text input')
-    parser.add_argument('-v', help='voice selection')
-    parser.add_argument('-o', help='output filename', default='output.mp3')
-    parser.add_argument('-txt', help='text input from a txt file', type=argparse.FileType('r', encoding="utf-8"))
-    parser.add_argument('-play', help='play sound after generating audio', action='store_true')
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description='Generate TikTok voice TTS audio.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
+    input_group = parser.add_mutually_exclusive_group(required=False)
+    input_group.add_argument('-t', '--text', help='Text input to speak.')
+    input_group.add_argument(
+        '-txt',
+        '--text-file',
+        type=Path,
+        help='Path to a UTF-8 text file to speak.',
+    )
+    input_group.add_argument(
+        '--list-voices',
+        action='store_true',
+        help='Print all supported voice names and exit.',
+    )
+    input_group.add_argument(
+        '--export-voices-json',
+        type=Path,
+        help='Export available voices metadata as JSON and exit.',
+    )
+
+    parser.add_argument('-v', '--voice', help='Voice name, for example US_MALE_1.')
+    parser.add_argument('-o', '--output', default='output.mp3', help='Output audio file path.')
+    parser.add_argument('-play', '--play', help='Play sound after generating audio.', action='store_true')
+    return parser
+
+
+def _read_text_from_args(args: argparse.Namespace) -> str:
+    if args.text is not None:
+        return args.text
+
+    if args.text_file is not None:
+        return args.text_file.read_text(encoding='utf-8')
+
+    raise ValueError('Provide either --text or --text-file, or use --list-voices.')
+
+
+def _print_voices() -> None:
+    for voice in Voice:
+        print(voice.name)
+
+
+def _export_voices_json(output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(voices_payload(), indent=2, ensure_ascii=False), encoding='utf-8')
+    print(f'Voices JSON saved to {output_path}')
+
+
+def main() -> int:
+    parser = build_parser()
     args = parser.parse_args()
 
-    # checking if given values are valid
-    if not args.t and not args.txt:
-        raise ValueError("insert a valid text or txt file")
+    if args.list_voices:
+        _print_voices()
+        return 0
 
-    if args.t and args.txt:
-        raise ValueError("only one input type is possible")
-    
-    voice: Voice | None = Voice.from_string(args.v)
-    if voice == None:
-        raise ValueError("no valid voice has been selected")
+    if args.export_voices_json:
+        _export_voices_json(args.export_voices_json)
+        return 0
 
-    # executing script
-    if args.t:
-        tts(args.t, voice, args.o, args.play)
-    elif args.txt:
-        tts(args.txt.read(), voice, args.o, args.play)
+    if not args.text and not args.text_file:
+        parser.error('one of --text or --text-file is required unless --list-voices or --export-voices-json is used')
+
+    if not args.voice:
+        parser.error('--voice is required unless --list-voices or --export-voices-json is used')
+
+    voice = Voice.from_string(args.voice)
+    if voice is None:
+        parser.error(f'invalid voice: {args.voice}. Use --list-voices to see valid names.')
+
+    text = _read_text_from_args(args)
+    tts(text, voice, args.output, args.play)
+    print(f'Audio saved to {args.output}')
+    return 0
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

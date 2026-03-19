@@ -1,0 +1,12 @@
+{
+  "plugin_name": "TikTok TTS Provider",
+  "version": "1.0.0",
+  "engine_type": "cli_wrapper",
+  "executable": "TikTokVoiceTTS.exe",
+  "commands": {
+    "get_voices": "--list-voices",
+    "generate": "--voice {voice_id} --text \"{text}\" --output \"{file_path}\""
+  },
+  "output_format": "mp3",
+  "author": "spasimirkirov"
+}
