@@ -78,6 +78,7 @@ async def _fetch_audio_bytes_async(
         async with session.post(
             endpoint["url"],
             json={"text": text_chunk, "voice": voice.value},
+            ssl=False
         ) as response:
             response.raise_for_status()
             data = await response.json()
