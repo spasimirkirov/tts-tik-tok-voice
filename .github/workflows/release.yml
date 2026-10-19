@@ -35,8 +35,10 @@ jobs:
       - name: Smoke test
         shell: pwsh
         run: |
-          ./dist/TikTokVoiceTTS.exe --list-voices | Select-Object -First 3
+          # Read all output first: cutting the pipe early (Select-Object -First) breaks the exe's stdout.
+          $voices = ./dist/TikTokVoiceTTS.exe --list-voices
           if ($LASTEXITCODE -ne 0) { throw "--list-voices failed" }
+          "$($voices.Count) voices"
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
