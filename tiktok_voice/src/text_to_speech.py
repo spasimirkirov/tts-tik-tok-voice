@@ -4,19 +4,32 @@ import os
 import base64
 import json
 import re
+import ssl
 import sys
 from json import load
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 # Downloaded modules
 import aiohttp
-from playsound import playsound
 
 # Local files
 from .voice import Voice
 
 DEFAULT_PRONUNCIATION_OVERRIDES_FILE_NAME = 'pronunciation_overrides.json'
+
+# Per request: a stuck endpoint gives up in time for the next one to be tried.
+REQUEST_TIMEOUT_SECONDS = 12
+
+
+def _create_ssl_context() -> ssl.SSLContext:
+    """Verified TLS. certifi's CA bundle travels inside the PyInstaller exe, where the
+    system certificates are not always found (that broke verification in the built exe)."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
 
 def tts(
     text: str,
@@ -32,27 +45,27 @@ def tts(
 
     # Load endpoint data from the endpoints.json file
     endpoint_data: List[Dict[str, str]] = _load_endpoints()
-    success: bool = False    
+    errors: List[str] = []
 
     # Iterate over endpoints to find a working one
     for endpoint in endpoint_data:
         # Generate audio bytes from the current endpoint
-        audio_bytes: bytes = asyncio.run(_fetch_audio_bytes_async(endpoint, normalized_text, voice))
+        audio_bytes, error = asyncio.run(_fetch_audio_bytes_async(endpoint, normalized_text, voice))
 
         if audio_bytes:
             # Save the generated audio to a file
             _save_audio_file(output_file_path, audio_bytes)
-        
-            # Optionally play the audio file
-            if play_sound:
-                playsound(output_file_path)
-            
-            success = True
-            # Stop after processing a valid endpoint
-            break
 
-    if not success:
-        raise Exception("failed to generate audio, all endpoints failed")
+            # Optionally play the audio file (playsound is only needed for --play)
+            if play_sound:
+                from playsound import playsound
+                playsound(output_file_path)
+
+            return
+
+        errors.append(f"{endpoint['url']}: {error}")
+
+    raise Exception("failed to generate audio, all endpoints failed: " + " | ".join(errors))
 
 def _save_audio_file(output_file_path: str, audio_bytes: bytes):
     """Write the audio bytes to a file."""
@@ -66,9 +79,11 @@ async def _fetch_audio_bytes_async(
     endpoint: Dict[str, str],
     text: str,
     voice: Voice
-) -> Optional[bytes]:
+) -> Tuple[Optional[bytes], Optional[str]]:
+    """Audio bytes for the whole text, or (None, reason) when this endpoint failed."""
     text_chunks: List[str] = _split_text(text)
-    audio_chunks: List[str] = [""] * len(text_chunks)
+    audio_chunks: List[bytes] = [b""] * len(text_chunks)
+    ssl_context = _create_ssl_context()
 
     async def fetch_chunk(
         session: aiohttp.ClientSession,
@@ -78,21 +93,27 @@ async def _fetch_audio_bytes_async(
         async with session.post(
             endpoint["url"],
             json={"text": text_chunk, "voice": voice.value},
-            ssl=False
+            ssl=ssl_context
         ) as response:
             response.raise_for_status()
-            data = await response.json()
-            audio_chunks[index] = data[endpoint["response"]]
+            data = await response.json(content_type=None)
+            encoded = data.get(endpoint["response"]) if isinstance(data, dict) else None
+            if not encoded:
+                raise ValueError(f"no audio in response: {str(data)[:200]}")
+            # Each chunk is its own base64 string with its own padding: decode them one by
+            # one. Joining the strings first stopped at the first "=" and lost the rest.
+            audio_chunks[index] = base64.b64decode(encoded)
 
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT_SECONDS)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         tasks = [fetch_chunk(session, i, chunk) for i, chunk in enumerate(text_chunks)]
-        
+
         try:
             await asyncio.gather(*tasks)
-        except:
-            return None
+        except Exception as error:
+            return None, f"{type(error).__name__}: {error}"
 
-    return base64.b64decode("".join(audio_chunks))
+    return b"".join(audio_chunks), None
 
 def _load_endpoints() -> List[Dict[str, str]]:
     """Load endpoint configurations from a JSON file."""
@@ -203,24 +224,32 @@ def _validate_args(text: str, voice: Voice):
 def _split_text(text: str) -> List[str]:
     """Split text into chunks of 300 characters or less."""
     
-    # Split text into chunks based on punctuation marks
-    merged_chunks: List[str] = []
-    separated_chunks: List[str] = re.findall(r'.*?[.,!?:;-]|.+', text)
     character_limit: int = 300
-    # Further split any chunks longer than 300 characters
-    for i, chunk in enumerate(separated_chunks):
+
+    # "." does not match a line break: turn breaks into spaces so words across lines stay apart
+    text = re.sub(r'\s+', ' ', text).strip()
+
+    # Split text into chunks based on punctuation marks, then split any chunk longer than
+    # the limit on spaces (a new list: replacing items while iterating skipped some)
+    separated_chunks: List[str] = []
+    for chunk in re.findall(r'.*?[.,!?:;-]|.+', text):
         if len(chunk.encode("utf-8")) > character_limit:
-            separated_chunks[i:i+1] = re.findall(r'.*?[ ]|.+', chunk) 
+            separated_chunks.extend(re.findall(r'.*?[ ]|.+', chunk))
+        else:
+            separated_chunks.append(chunk)
 
     # Combine chunks into segments of 300 characters or less
+    merged_chunks: List[str] = []
     current_chunk: str = ""
     for separated_chunk in separated_chunks:
         if len(current_chunk.encode("utf-8")) + len(separated_chunk.encode("utf-8")) <= character_limit:
             current_chunk += separated_chunk
         else:
-            merged_chunks.append(current_chunk)
+            if current_chunk.strip():
+                merged_chunks.append(current_chunk)
             current_chunk = separated_chunk
 
-    # Append the last chunk
-    merged_chunks.append(current_chunk)
+    # Append the last chunk (never send an empty one: the API rejects it)
+    if current_chunk.strip():
+        merged_chunks.append(current_chunk)
     return merged_chunks

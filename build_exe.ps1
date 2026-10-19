@@ -1,5 +1,7 @@
 param(
-    [switch]$Clean
+    [switch]$Clean,
+    # Python launcher to use; the release workflow passes 'python' (actions/setup-python).
+    [string]$Python = 'py'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,9 +10,10 @@ if ($Clean) {
     Remove-Item -Recurse -Force build, dist -ErrorAction SilentlyContinue
 }
 
-py -m pip install -r requirements.txt
-py -m pip install pyinstaller
-py -m PyInstaller --clean TikTokVoiceTTS.spec
+& $Python -m pip install -r requirements.txt
+& $Python -m pip install pyinstaller
+& $Python -m PyInstaller --clean --noconfirm TikTokVoiceTTS.spec
+if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
 
 $manifestSourcePath = Join-Path $PSScriptRoot 'manifest.json'
 $manifestData = Get-Content $manifestSourcePath -Raw | ConvertFrom-Json

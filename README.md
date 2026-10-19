@@ -172,6 +172,14 @@ List of every voice and its designation:
 | MALE_FUNNY                    |
 | FEMALE_EMOTIONAL              |
 
+## Privacy and availability
+This is an unofficial client. The text you convert is sent to the public endpoints listed in
+`tiktok_voice/data/config.json`, which are run by third parties and can stop working at any time.
+
+## Releases
+Push a tag that matches `version` in `manifest.json` (for example `v1.0.1`) and the
+`Release` GitHub Actions workflow builds the exe and attaches the plugin zip to a new release.
+
 ## License
 ```
 MIT License
