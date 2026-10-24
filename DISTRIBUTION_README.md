@@ -89,6 +89,10 @@ The executable still needs internet access because audio is generated through re
 
 - Voice names must match exactly, for example `US_MALE_1`.
 - Use `voices.json` if you want to build your own UI or picker around the available voices.
+  The file lists the voices in three categories for Pal Engine's voice slots: `female`, `male` and
+  `neutral` (every voice). Each voice has its `id` (the name `--voice` takes, e.g. `US_FEMALE_1`), a
+  `name`, `locale` (en-GB), `language` ("English (United Kingdom)", what voices are grouped by),
+  `gender` and its TikTok `collection` (disney, english, singing ...).
 - When using `--text-file`, save the file as UTF-8 text.
 - The generated file format is MP3.
 - You can edit `pronunciation_overrides.json` to fix words a voice clips or says badly.

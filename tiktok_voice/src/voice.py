@@ -234,32 +234,93 @@ VOICE_CATEGORIES = {
 }
 
 
-def voices_payload() -> dict:
-    categorized_voices = []
-    for category, voices in VOICE_CATEGORIES.items():
-        categorized_voices.append({
-            'category': category,
-            'voices': [
-                {
-                    'name': voice.name,
-                    'id': voice.value,
-                }
-                for voice in voices
-            ],
-        })
+# Locale and language of each voice, from the start of its TikTok id ("en_us_001", "jp_female_rei",
+# "fr_001"). Longest prefix first. Voices with a plain "en_" id are English without a region.
+_LOCALES = (
+    ('en_us', 'en-US', 'English (United States)'),
+    ('en_uk', 'en-GB', 'English (United Kingdom)'),
+    ('en_au', 'en-AU', 'English (Australia)'),
+    ('es_mx', 'es-MX', 'Spanish (Mexico)'),
+    ('en', 'en', 'English'),
+    ('fr', 'fr-FR', 'French (France)'),
+    ('de', 'de-DE', 'German (Germany)'),
+    ('es', 'es-ES', 'Spanish (Spain)'),
+    ('br', 'pt-BR', 'Portuguese (Brazil)'),
+    ('bp', 'pt-BR', 'Portuguese (Brazil)'),
+    ('pt', 'pt-BR', 'Portuguese (Brazil)'),
+    ('id', 'id-ID', 'Indonesian (Indonesia)'),
+    ('jp', 'ja-JP', 'Japanese (Japan)'),
+    ('kr', 'ko-KR', 'Korean (Korea)'),
+)
 
+# Voices whose names don't say it.
+_GENDER_OVERRIDES = {
+    Voice.MADAME_LEOTA: 'female',
+    Voice.GHOST_HOST: 'male',
+    Voice.PIRATE: 'male',
+    Voice.GHOSTFACE: 'male',
+    Voice.CHEWBACCA: 'male',
+    Voice.C3PO: 'male',
+    Voice.STORMTROOPER: 'male',
+    Voice.ROCKET: 'male',
+    Voice.STITCH: 'neutral',
+}
+
+
+def _locale(voice: Voice):
+    for prefix, locale, language in _LOCALES:
+        if voice.value == prefix or voice.value.startswith(prefix + '_'):
+            return locale, language
+    return '', ''
+
+
+def _gender(voice: Voice) -> str:
+    if voice in _GENDER_OVERRIDES:
+        return _GENDER_OVERRIDES[voice]
+    words = voice.name.split('_')
+    if 'FEMALE' in words:
+        return 'female'
+    if 'MALE' in words:
+        return 'male'
+    return 'neutral'
+
+
+def _collection(voice: Voice) -> str:
+    return next((name for name, voices in VOICE_CATEGORIES.items() if voice in voices), 'OTHER')
+
+
+def voice_entry(voice: Voice) -> dict:
+    """One voice for the host. The id stays the enum name (US_FEMALE_1): the CLI takes it
+    (--voice), and voices saved by earlier versions keep working."""
+    locale, language = _locale(voice)
+    collection = _collection(voice)
+    label = voice.name.replace('_', ' ').title()
+    if collection in ('DISNEY', 'SINGING'):
+        label = f'{label} ({collection.title()})'
     return {
-        'totalVoices': len(list(Voice)),
-        'categories': categorized_voices,
-        'flat': [
+        'id': voice.name,
+        'name': label,
+        'locale': locale,
+        'language': language,
+        'gender': _gender(voice),
+        'collection': collection.lower(),
+    }
+
+
+# The categories Pal Engine fills its voice slots from; "neutral" offers every voice.
+CATEGORIES = ('female', 'male', 'neutral')
+
+
+def voices_payload() -> dict:
+    """voices.json for the host: {"categories": [{"category": ..., "voices": [...]}, ...]}."""
+    entries = [voice_entry(voice) for voice in Voice]
+    entries.sort(key=lambda entry: (entry['language'], entry['name']))
+    return {
+        'categories': [
             {
-                'name': voice.name,
-                'id': voice.value,
-                'category': next(
-                    (category for category, voices in VOICE_CATEGORIES.items() if voice in voices),
-                    'UNCATEGORIZED',
-                ),
+                'category': category,
+                'voices': entries if category == 'neutral' else [e for e in entries if e['gender'] == category],
             }
-            for voice in Voice
+            for category in CATEGORIES
         ],
     }

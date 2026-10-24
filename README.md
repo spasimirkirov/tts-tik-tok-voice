@@ -51,6 +51,11 @@ Run `TikTokVoiceTTS.exe --list-voices`
 ### Export voices as JSON
 Run `TikTokVoiceTTS.exe --export-voices-json .\voices.json`
 
+The file lists the voices in three categories for Pal Engine's voice slots: `female`, `male` and
+`neutral` (every voice). Each voice has its `id` (the name `--voice` takes, e.g. `US_FEMALE_1`), a
+`name`, `locale` (en-GB), `language` ("English (United Kingdom)", what voices are grouped by),
+`gender` and its TikTok `collection` (disney, english, singing ...).
+
 ### Create audio from file
 1. Put your text in a UTF-8 text file.
 2. Run `TikTokVoiceTTS.exe --text-file FILENAME.txt --voice VOICENAME`
@@ -177,8 +182,10 @@ This is an unofficial client. The text you convert is sent to the public endpoin
 `tiktok_voice/data/config.json`, which are run by third parties and can stop working at any time.
 
 ## Releases
-Push a tag that matches `version` in `manifest.json` (for example `v1.0.1`) and the
-`Release` GitHub Actions workflow builds the exe and attaches the plugin zip to a new release.
+Bump `version` in `manifest.json` and merge to `main`: the `Release` GitHub Actions workflow builds
+the exe and publishes release `v<version>` with the plugin zip. Pal Engine's integration updater
+(`update.github` in the manifest) offers it to users. A merge without a version change builds
+nothing; pushing a matching tag by hand also works.
 
 ## License
 ```
