@@ -29,6 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help='Export available voices metadata as JSON and exit.',
     )
+    input_group.add_argument(
+        '--serve',
+        action='store_true',
+        help="Run as Pal Engine's persistent worker: JSON requests on stdin, one per line.",
+    )
 
     parser.add_argument('-v', '--voice', help='Voice name, for example US_MALE_1.')
     parser.add_argument('-o', '--output', default='output.mp3', help='Output audio file path.')
@@ -61,6 +66,10 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
+    if args.serve:
+        from tiktok_voice.serve import serve
+        return serve()
+
     if args.list_voices:
         _print_voices()
         return 0
@@ -70,7 +79,7 @@ def main() -> int:
         return 0
 
     if not args.text and not args.text_file:
-        parser.error('one of --text or --text-file is required unless --list-voices or --export-voices-json is used')
+        parser.error('one of --text or --text-file is required unless --list-voices, --export-voices-json or --serve is used')
 
     if not args.voice:
         parser.error('--voice is required unless --list-voices or --export-voices-json is used')

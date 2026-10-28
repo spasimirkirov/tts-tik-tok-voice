@@ -65,6 +65,10 @@ jobs:
           "$($voices.Count) voices"
           $catalog = Get-Content dist/voices.json -Raw | ConvertFrom-Json
           if (-not $catalog.categories -or $catalog.categories.Count -lt 3) { throw "voices.json has no categories" }
+          # Persistent worker (--serve): it must start and print its ready line (no synthesis here:
+          # the TikTok endpoints are too unreliable for CI).
+          $lines = '' | ./dist/TikTokVoiceTTS.exe --serve
+          if (-not ($lines | Where-Object { $_ -match '"event"\s*:\s*"ready"' })) { throw "--serve printed no ready line" }
 
       - name: Publish release
         if: steps.version.outputs.build == 'true'

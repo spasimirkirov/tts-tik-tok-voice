@@ -6,6 +6,18 @@ The main goal of this fork is to let a user build a small standalone `.exe` that
 
 This project is only for fun. It is not associated with TikTok in any way.
 
+## Install in Pal Engine
+
+1. Download `TikTokVoiceTTS-<version>.zip` from the
+   [latest release](https://github.com/spasimirkirov/tts-tik-tok-voice/releases/latest).
+2. In Pal Engine, open **Settings › Integrations**, click **Add Zip**, choose the zip and click
+   **Save**.
+3. Choose **TikTok TTS Provider** in **Settings › Voice › Default TTS Provider**, or for one character in
+   Home › This character › Voice.
+
+Updates: Pal Engine checks this repository for new releases. When one is out, **Settings ›
+Integrations** shows an **Update** button next to the integration. Needs an internet connection.
+
 ## Windows Executable
 
 ### Build
@@ -35,13 +47,8 @@ The executable still requires an internet connection because audio is generated 
 
 The build now emits a ready-to-import Pal Engine plugin zip that matches the documented integration package layout. The zip should be the default artifact used for Pal Engine registration.
 
-Import flow in Pal Engine:
-
-1. Open `Settings -> Integrations`
-2. Choose `Add Plugin`
-3. Select `dist\TikTokVoiceTTS-<version>.zip`
-4. Let Pal Engine inspect it
-5. Save the integration
+To try a local build in Pal Engine, add `dist\TikTokVoiceTTS-<version>.zip` the same way (see
+[Install in Pal Engine](#install-in-pal-engine)).
 
 ## Executable Usage
 
@@ -75,6 +82,23 @@ If a voice clips or mispronounces a word, you can edit `pronunciation_overrides.
 The executable loads the bundled defaults first, then merges any `pronunciation_overrides.json` found next to the `.exe` or in the current working directory.
 
 This fork ships default Japanese overrides so romanized inputs such as `Arigatou Sensei` can be rewritten to kana before they are sent to TTS.
+
+## Pal Engine persistent worker (`--serve`)
+
+Pal Engine 0.8.5+ starts the exe once with `--serve` and keeps it running, instead of one process per
+sentence (`"serve": "--serve"` and `"persistent_worker": true` in `manifest.json`). One JSON object
+per line:
+
+```
+<- {"event": "ready"}
+-> {"id": "7", "action": "synthesize", "text": "Hello", "voice_id": "VOICE", "output": "C:\tmp\x.mp3"}
+<- {"id": "7", "ok": true, "output": "C:\tmp\x.mp3"}
+<- {"id": "7", "ok": false, "error": "..."}
+```
+
+Requests come on stdin, responses and the ready line go to stdout (logs to stderr), one request at
+a time. The worker ends when stdin closes. Older Pal Engine versions ignore `serve` and keep using
+the `generate` command.
 
 ## Voices
 List of every voice and its designation:
