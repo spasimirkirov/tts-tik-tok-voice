@@ -1,11 +1,12 @@
 {
   "plugin_name": "TikTok TTS Provider",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "engine_type": "cli_wrapper",
   "executable": "TikTokVoiceTTS.exe",
   "commands": {
     "get_voices": "--list-voices",
-    "generate": "--voice {voice_id} --text \"{text}\" --output \"{file_path}\""
+    "generate": "--voice {voice_id} --text \"{text}\" --output \"{file_path}\"",
+    "serve": "--serve"
   },
   "voices": {
     "catalog_path": "voices.json"
@@ -14,5 +15,8 @@
   "author": "spasimirkirov",
   "update": {
     "github": "spasimirkirov/tts-tik-tok-voice"
+  },
+  "capabilities": {
+    "persistent_worker": true
   }
 }
